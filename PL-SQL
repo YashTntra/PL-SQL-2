@@ -1,0 +1,141 @@
+CREATE TABLE Students(
+  student_id   INT PRIMARY KEY,
+  student_name VARCHAR2(50),
+  course       VARCHAR2(30)
+);
+
+CREATE TABLE Marks(
+  student_id INT,
+  subject    VARCHAR2(30),
+  score      NUMBER,
+  CONSTRAINT fk_marks_students FOREIGN KEY (student_id) REFERENCES Students(student_id)
+);
+
+INSERT INTO Students VALUES (1, 'Alice', 'EXTC');
+INSERT INTO Students VALUES (2, 'Bob',   'EXTC');
+INSERT INTO Students VALUES (3, 'Carol', 'IT');
+INSERT INTO Students VALUES (4, 'Yash',  'CSE');
+INSERT INTO Students VALUES (5, 'Devansh',  'IT');
+INSERT INTO Students VALUES (6, 'Harsh',  'CSE');
+
+SELECT * FROM Students;
+
+
+INSERT INTO Marks(student_id, subject, score) VALUES (1, 'Maths',      95);
+INSERT INTO Marks(student_id, subject, score) VALUES (1, 'Physics',88);
+INSERT INTO Marks(student_id, subject, score) VALUES (2, 'Maths',      78);
+INSERT INTO Marks(student_id, subject, score) VALUES (2, 'Physics',82);
+INSERT INTO Marks(student_id, subject, score) VALUES (3, 'Circuits',  67);
+INSERT INTO Marks(student_id, subject, score) VALUES (6, 'Maths',      95);
+INSERT INTO Marks(student_id, subject, score) VALUES (6, 'Physics',88);
+INSERT INTO Marks(student_id, subject, score) VALUES (4, 'Maths',      78);
+INSERT INTO Marks(student_id, subject, score) VALUES (4, 'Physics',82);
+INSERT INTO Marks(student_id, subject, score) VALUES (3, 'Maths',  67);
+
+SELECT * FROM Marks;
+
+CREATE OR REPLACE FUNCTION get_student_total(p_student_id IN NUMBER)
+RETURN NUMBER
+IS
+  v_total NUMBER;
+BEGIN
+  SELECT NVL(SUM(score), 0)
+  INTO v_total
+  FROM Marks
+  WHERE student_id = p_student_id;
+
+  RETURN v_total;
+END;
+
+
+CREATE OR REPLACE FUNCTION get_student_average(p_student_id IN NUMBER)
+RETURN NUMBER
+IS
+  v_avg NUMBER;
+BEGIN
+  SELECT NVL(AVG(score), 0)
+  INTO v_avg
+  FROM Marks
+  WHERE student_id = p_student_id;
+
+  RETURN v_avg;
+END;
+
+CREATE OR REPLACE FUNCTION get_grade(p_student_id IN NUMBER)
+RETURN VARCHAR2
+IS
+  v_avg NUMBER;
+  v_grade VARCHAR2(2);
+BEGIN
+  -- Get average marks
+  SELECT NVL(AVG(score), 0)
+  INTO v_avg
+  FROM Marks
+  WHERE student_id = p_student_id;
+
+  -- Assign grade
+  IF v_avg >= 90 THEN
+    v_grade := 'A+';
+  ELSIF v_avg >= 80 THEN
+    v_grade := 'A';
+  ELSIF v_avg >= 70 THEN
+    v_grade := 'B';
+  ELSIF v_avg >= 60 THEN
+    v_grade := 'C';
+  ELSE
+    v_grade := 'F';
+  END IF;
+
+  RETURN v_grade;
+END;
+
+
+CREATE OR REPLACE FUNCTION course_topper(p_course IN VARCHAR2)
+RETURN VARCHAR2
+IS
+  v_name VARCHAR2(50);
+BEGIN
+  SELECT student_name
+  INTO v_name
+  FROM (
+    SELECT s.student_name, SUM(m.score) AS total_marks
+    FROM Students s
+    JOIN Marks m ON s.student_id = m.student_id
+    WHERE s.course = p_course
+    GROUP BY s.student_name
+    ORDER BY total_marks DESC
+  )
+  WHERE ROWNUM = 1;   -- take the highest scorer
+
+  RETURN v_name;
+
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    RETURN 'No student found';
+END;
+
+
+DECLARE
+  v_total NUMBER;
+  v_avg NUMBER;
+  v_grade VARCHAR2(2);
+  v_topper VARCHAR2(50);
+BEGIN
+  v_total := get_student_total(1);
+  v_avg := get_student_average(1);
+  v_grade := get_grade(1);
+  v_topper := course_topper('EXTC');
+
+  DBMS_OUTPUT.PUT_LINE('Total Marks: ' || v_total);
+  DBMS_OUTPUT.PUT_LINE('Average Marks: ' || v_avg);
+  DBMS_OUTPUT.PUT_LINE('Grade: ' || v_grade);
+  DBMS_OUTPUT.PUT_LINE('Course Topper (EXTC): ' || v_topper);
+END;
+
+
+
+
+
+
+
+

@@ -115,6 +115,7 @@ EXCEPTION
 END;
 
 
+
 DECLARE
   v_total NUMBER;
   v_avg NUMBER;
@@ -131,6 +132,21 @@ BEGIN
   DBMS_OUTPUT.PUT_LINE('Grade: ' || v_grade);
   DBMS_OUTPUT.PUT_LINE('Course Topper (EXTC): ' || v_topper);
 END;
+
+
+SELECT 
+  s.student_id,
+  s.student_name,
+  s.course,
+  get_student_total(s.student_id) AS total_marks,
+  get_student_average(s.student_id) AS average_marks,
+  get_grade(s.student_id) AS grade
+FROM Students s;
+
+
+SELECT course_topper('EXTC') AS EXTC_topper FROM dual;
+SELECT course_topper('IT') AS IT_topper FROM dual;
+SELECT course_topper('CSE') AS CSE_topper FROM dual;
 
 
 
